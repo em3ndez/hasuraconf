@@ -125,6 +125,7 @@ class HasuraConfigurator(
     var jsonSchemaVersion: String,
     var customJsonSchemaPropsFieldName: String,
     var ignoreJsonSchema: Boolean = false,
+    var ignoreUnkonwFieldsInExportedMetadata: Boolean = false,
 
     var checkConstraintGenerator: HasuraCheckConstraintGenerator,
     var generateCheckConstraintsForJSRValidationAnnnotations: Boolean = true,
@@ -1207,7 +1208,17 @@ class HasuraConfigurator(
     }
 
     fun exportMetadata() : HasuraMetadataV3 {
-        return Json.decodeFromString<HasuraMetadataV3>(exportMetadataJson())
+        // TODO: not a nice soltuion, but https://github.com/hasura/graphql-engine/blob/a89cc61039aa611c6ab04e1bc231c2dfa22ca656/contrib/metadata-types/generated/HasuraMetadataV3.json
+        // is actually not complete and does not contain the scope field. So we need to ignoreUnknownKeys otheriwse we get:
+        // Caused by: kotlinx.serialization.json.internal.JsonDecodingException: Unexpected JSON token at offset 38246: Encountered an unknown key 'scope' at path: $.allowlist[0].collection
+        //Use 'ignoreUnknownKeys = true' in 'Json {}' builder to ignore unknown keys.
+        //JSON input: .....ollection":"allowed-queries","scope":{"global":true}}],"acti.....
+        val json = Json {
+            if (ignoreUnkonwFieldsInExportedMetadata) {
+                ignoreUnknownKeys = true // This will ignore unknown fields in the JSON
+            }
+        }
+        return json.decodeFromString<HasuraMetadataV3>(exportMetadataJson())
     }
 
      fun exportMetadataJson() : String {
