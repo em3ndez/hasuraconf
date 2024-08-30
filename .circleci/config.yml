@@ -3,7 +3,7 @@ executorType: machine
 jobs:
   build:
     machine:
-      image: ubuntu-2004:202201-02
+      image: default
     steps:
       - checkout
       # Defaults to JDK 11 now
